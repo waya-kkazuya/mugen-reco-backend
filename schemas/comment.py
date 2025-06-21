@@ -3,7 +3,9 @@ from datetime import datetime
 
 
 class CommentBody(BaseModel):
-    content: str = Field(..., example="このアニメ最高でした！")
+    content: str = Field(
+        ..., min_length=1, max_length=280, example="このアニメ最高でした！"
+    )
 
 
 class CommentResponse(CommentBody):
