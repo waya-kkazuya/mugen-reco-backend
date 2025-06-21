@@ -12,6 +12,9 @@ from schemas.auth import CsrfSettings
 app = FastAPI()
 
 
+app.include_router(route_auth.router)
+
+
 # CORSホワイトリスト、フロントエンドのURL
 origins = ["http://localhost:3000"]
 app.add_middleware(
