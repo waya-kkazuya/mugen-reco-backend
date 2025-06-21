@@ -13,7 +13,10 @@ app = FastAPI()
 
 
 app.include_router(route_auth.router)
-
+app.include_router(route_post.router)
+app.include_router(route_category.router)
+app.include_router(route_comment.router)
+app.include_router(route_like.router)
 
 # CORSホワイトリスト、フロントエンドのURL
 origins = ["http://localhost:3000"]
