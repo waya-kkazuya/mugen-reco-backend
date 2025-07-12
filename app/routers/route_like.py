@@ -1,8 +1,8 @@
 from fastapi import APIRouter
 from fastapi import Response, Request, HTTPException, Depends
-from schemas.common import SuccessMsg
-from schemas.like import LikeStatusResponse, LikeCountResponse
-from cruds.crud_like import (
+from app.schemas.common import SuccessMsg
+from app.schemas.like import LikeStatusResponse, LikeCountResponse, LikeToggleResponse
+from app.cruds.crud_like import (
     db_add_like,
     db_remove_like,
     db_get_like_status,
@@ -12,17 +12,16 @@ from cruds.crud_like import (
 from starlette.status import HTTP_201_CREATED
 from typing import List
 from fastapi_csrf_protect import CsrfProtect
-from auth_utils import AuthJwtCsrf
+from app.auth_utils import AuthJwtCsrf
 
 router = APIRouter()
 auth = AuthJwtCsrf()
 
 
 # ユーザー本人のいいねなので、認証が必要
-@router.get("/posts/{post_id}/likes/status", response_model=LikeStatusResponse)
+@router.get("/api/posts/{post_id}/likes/status", response_model=LikeStatusResponse)
 def get_like_status(request: Request, post_id: str):
     username = auth.verify_jwt(request)
-    # username = 'loggined_test_user' # JWTから取得ダミー
     try:
         liked = db_get_like_status(post_id, username)
         return {"liked": liked}
@@ -30,8 +29,60 @@ def get_like_status(request: Request, post_id: str):
         raise HTTPException(status_code=500, detail="Like status check failed")
 
 
+@router.post("/api/posts/{post_id}/like-toggle", response_model=LikeToggleResponse)
+def toggle_like(
+    request: Request,
+    response: Response,
+    post_id: str,
+    csrf_protect: CsrfProtect = Depends(),
+):
+    new_token, username = auth.verify_csrf_update_jwt(
+        request, csrf_protect, request.headers
+    )
+    try:
+        # いいね状態:bool
+        current_status = db_get_like_status(post_id, username)
+        if current_status:
+            # いいねを解除
+            is_success = db_remove_like(post_id, username)
+            if not is_success:
+                raise HTTPException(status_code=500, detail="Failed to remove like")
+            is_liked = False
+            action = "removed"
+        else:
+            # いいねを追加
+            is_success = db_add_like(post_id, username)
+            if not is_success:
+                raise HTTPException(status_code=409, detail="Like already exists")
+            is_liked = True
+            action = "added"
+
+        # 総いいね数を取得
+        like_count = db_get_like_count(post_id)
+
+        response.set_cookie(
+            key="access_token",
+            value=f"Bearer {new_token}",
+            httponly=True,
+            samesite="none",
+            secure=True,
+        )
+
+        return {
+            "message": f"Like {action} successfully",
+            "is_liked": is_liked,
+            "like_count": like_count,
+            "post_id": post_id,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Unexpected error in toggle_like: {e}")
+        raise HTTPException(status_code=500, detail="Like toggle failed")
+
+
 # エラーハンドリング必要 exception_handlerを設定する
-@router.post("/posts/{post_id}/likes", response_model=SuccessMsg)
+@router.post("/api/posts/{post_id}/likes", response_model=SuccessMsg)
 def like_post(
     request: Request,
     response: Response,
@@ -41,7 +92,6 @@ def like_post(
     new_token, username = auth.verify_csrf_update_jwt(
         request, csrf_protect, request.headers
     )
-    # username = 'loggined_test_user' # JWTから取得ダミー
     res = db_add_like(post_id, username)
 
     response.set_cookie(
@@ -58,7 +108,7 @@ def like_post(
 
 # 認可必要
 # エラーハンドリング必要
-@router.delete("/posts/{post_id}/likes", response_model=SuccessMsg)
+@router.delete("/api/posts/{post_id}/likes", response_model=SuccessMsg)
 def unlike_post(
     request: Request,
     response: Response,
@@ -68,8 +118,7 @@ def unlike_post(
     new_token, username = auth.verify_csrf_update_jwt(
         request, csrf_protect, request.headers
     )
-    # username = 'loggined_test_user' # JWTから取得ダミー
-    # 認可
+    # 認可チェック
     like = db_get_like(post_id, username)
     if not like:
         raise HTTPException(status_code=404, detail="Like not found")
@@ -93,7 +142,7 @@ def unlike_post(
 
 
 # 誰ても投稿についているいいね数は見れる
-@router.get("/posts/{post_id}/likes", response_model=LikeCountResponse)
+@router.get("/api/posts/{post_id}/likes", response_model=LikeCountResponse)
 def get_like_count(post_id: str):
     try:
         count = db_get_like_count(post_id)
