@@ -3,6 +3,7 @@ from fastapi import HTTPException
 from passlib.context import CryptContext
 from datetime import datetime, timedelta, timezone
 from decouple import config
+from typing import Optional
 
 JWT_KEY = config("JWT_KEY")
 
@@ -60,3 +61,10 @@ class AuthJwtCsrf:
         subject = self.verify_jwt(request)
         new_token = self.encode_jwt(subject)
         return new_token, subject
+
+    def get_current_user_optional(self, request) -> Optional[str]:
+        """オプショナルなJWT認証（失敗してもNoneを返す）"""
+        try:
+            return self.verify_jwt(request)
+        except HTTPException:
+            return None
