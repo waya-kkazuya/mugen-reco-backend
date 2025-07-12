@@ -1,4 +1,4 @@
-from database import table
+from app.database import table
 from boto3.dynamodb.conditions import Key
 from typing import Union
 from datetime import datetime
@@ -30,6 +30,9 @@ def db_add_like(post_id: str, username: str) -> bool:
         "post_id": post_id,
         "user_id": f"USER#{username}",
         "created_at": now,
+        # GSI5: ユーザーがいいねした投稿を効率的に取得
+        "GSI5_PK": f"USER#{username}",  # いいねしたユーザー
+        "GSI5_SK": f"{now}#{post_id}",  # いいねした日時 + 投稿ID
     }
 
     # 条件式で重複した書き込みを防ぐ
