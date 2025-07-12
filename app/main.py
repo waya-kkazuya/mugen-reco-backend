@@ -65,11 +65,6 @@ def read_root():
     return {"message": "Welcome to Fast API"}
 
 
-@app.get("/debug/sys-path")
-def get_sys_path():
-    return {"sys_path": sys.path}
-
-
 @app.get("/ping-dynamodb")
 def ping_dynamodb():
     try:
