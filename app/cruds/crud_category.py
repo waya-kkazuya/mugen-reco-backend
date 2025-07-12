@@ -1,5 +1,5 @@
 from boto3.dynamodb.conditions import Key
-from database import table
+from app.database import table
 
 
 def db_get_categories():
