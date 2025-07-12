@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from fastapi import HTTPException
-from cruds.crud_category import db_get_categories
-from schemas.category import CategoryResponse
+from app.cruds.crud_category import db_get_categories
+from app.schemas.category import CategoryResponse
 from typing import List
 
 router = APIRouter()
