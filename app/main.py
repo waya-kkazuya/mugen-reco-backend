@@ -1,13 +1,28 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from database import dynamodb, table
-from routers import route_post, route_category, route_auth, route_comment, route_like
+from app.database import dynamodb, table
+from app.routers import (
+    route_post,
+    route_category,
+    route_auth,
+    route_comment,
+    route_like,
+)
 from fastapi_csrf_protect import CsrfProtect
 from fastapi_csrf_protect.exceptions import CsrfProtectError
-from schemas.common import SuccessMsg
-from schemas.auth import CsrfSettings
+from app.schemas.common import SuccessMsg
+from app.schemas.auth import CsrfSettings
+from mangum import Mangum
+import sys
+import logging
+import os
 
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+logger.info(f"sys.path: {sys.path}")
+print(f"sys.path: {sys.path}")
 
 app = FastAPI()
 
@@ -19,10 +34,15 @@ app.include_router(route_comment.router)
 app.include_router(route_like.router)
 
 # CORSホワイトリスト、フロントエンドのURL
-origins = ["http://localhost:3000"]
+allowed_origins = [
+    "http://localhost:5173",
+    "https://www.mugen-reco.com",
+    "https://mugen-reco.com",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -52,3 +72,7 @@ def ping_dynamodb():
         return {"status": "ok", "tables": tables.get("TableNames", [])}
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
+
+# Lambdaエントリーポイント
+handler = Mangum(app)
