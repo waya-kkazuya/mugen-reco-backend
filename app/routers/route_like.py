@@ -12,10 +12,12 @@ from app.cruds.crud_like import (
 from starlette.status import HTTP_201_CREATED
 from typing import List
 from fastapi_csrf_protect import CsrfProtect
-from app.auth_utils import AuthJwtCsrf
+from app.auth.auth_utils import AuthJwtCsrf
+from app.auth.cookie_utils import CookieManager
 
 router = APIRouter()
 auth = AuthJwtCsrf()
+cookie_manager = CookieManager()
 
 
 # ユーザー本人のいいねなので、認証が必要
@@ -60,13 +62,7 @@ def toggle_like(
         # 総いいね数を取得
         like_count = db_get_like_count(post_id)
 
-        response.set_cookie(
-            key="access_token",
-            value=f"Bearer {new_token}",
-            httponly=True,
-            samesite="none",
-            secure=True,
-        )
+        cookie_manager.set_jwt_cookie(response, new_token)
 
         return {
             "message": f"Like {action} successfully",
@@ -93,14 +89,7 @@ def like_post(
         request, csrf_protect, request.headers
     )
     res = db_add_like(post_id, username)
-
-    response.set_cookie(
-        key="access_token",
-        value=f"Bearer {new_token}",
-        httponly=True,
-        samesite="none",
-        secure=True,
-    )
+    cookie_manager.set_jwt_cookie(response, new_token)
     if res:
         return {"message": "Like added successfully"}
     raise HTTPException(status_code=400, detail="Like already exists")
@@ -129,13 +118,7 @@ def unlike_post(
         )
 
     res = db_remove_like(post_id, username)
-    response.set_cookie(
-        key="access_token",
-        value=f"Bearer {new_token}",
-        httponly=True,
-        samesite="none",
-        secure=True,
-    )
+    cookie_manager.set_jwt_cookie(response, new_token)
     if res:
         return {"message": "Like removed successfully"}
     raise HTTPException(status_code=404, detail="Like not found")

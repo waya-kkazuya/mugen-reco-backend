@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 import uuid
 from boto3.dynamodb.conditions import Key
 from fastapi import HTTPException
-from app.auth_utils import AuthJwtCsrf
+from app.auth.auth_utils import AuthJwtCsrf
 import traceback
 
 auth = AuthJwtCsrf()
