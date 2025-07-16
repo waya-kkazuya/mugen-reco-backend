@@ -9,9 +9,10 @@ from app.cruds.crud_comment import (
     db_get_single_comment,
 )
 from app.auth_utils import AuthJwtCsrf
+from fastapi_csrf_protect import CsrfProtect
+from app.cookie_utils import CookieManager
 from starlette.status import HTTP_201_CREATED
 from typing import List
-from fastapi_csrf_protect import CsrfProtect
 import logging
 import traceback
 import sys
@@ -27,6 +28,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 auth = AuthJwtCsrf()
+cookie_manager = CookieManager()
 
 
 @router.post("/api/posts/{post_id}/comments", response_model=CommentResponse)
@@ -47,13 +49,7 @@ def create_comment(
         res = db_create_comment(username, post_id, data)
         print("db_create_comment後")
         response.status_code = HTTP_201_CREATED
-        response.set_cookie(
-            key="access_token",
-            value=f"Bearer {new_token}",
-            httponly=True,
-            samesite="none",
-            secure=True,
-        )
+        cookie_manager.set_jwt_cookie(response, new_token)
         return res
     except HTTPException:
         raise
@@ -105,13 +101,9 @@ def delete_comment(
         res = db_delete_comment(post_id, comment_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail="Delete comment failed")
-    response.set_cookie(
-        key="access_token",
-        value=f"Bearer {new_token}",
-        httponly=True,
-        samesite="none",
-        secure=True,
-    )
+
+    cookie_manager.set_jwt_cookie(response, new_token)
+
     if res:
         return {"message": f"Comment {comment_id} deleted successfully."}
     raise HTTPException(status_code=404, detail="Delete comment failed")

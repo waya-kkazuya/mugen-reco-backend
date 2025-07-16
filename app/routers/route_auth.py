@@ -6,10 +6,12 @@ from app.schemas.auth import Csrf
 from app.schemas.user import UserBody, UserInfo, UsernameCheckResponse
 from app.auth_utils import AuthJwtCsrf
 from fastapi_csrf_protect import CsrfProtect
+from app.cookie_utils import CookieManager
 from typing import Annotated
 
 router = APIRouter()
 auth = AuthJwtCsrf()
+cookie_manager = CookieManager()
 
 
 @router.get("/api/csrftoken", response_model=Csrf)
@@ -43,13 +45,7 @@ def login(
 
     token, username = db_login(user)
     print("username", username)
-    response.set_cookie(
-        key="access_token",
-        value=f"Bearer {token}",
-        httponly=True,
-        samesite="none",
-        secure=True,
-    )
+    cookie_manager.set_jwt_cookie(response, token)
     return {"username": username}
 
 
@@ -59,22 +55,14 @@ def logout(request: Request, response: Response, csrf_protect: CsrfProtect = Dep
     csrf_protect.validate_csrf(csrf_token)  # 例外が発生しなければCSRFトークンが有効
 
     # JWTのトークンを空に
-    response.set_cookie(
-        key="access_token", value="", httponly=True, samesite="none", secure=True
-    )
+    cookie_manager.clear_jwt_cookie(response)
     return {"message": "Successfully logged-out"}
 
 
 @router.get("/api/user", response_model=UserInfo)
 def get_user_refresh_jwt(request: Request, response: Response):
     new_token, subject = auth.verify_update_jwt(request)
-    response.set_cookie(
-        key="access_token",
-        value=f"Bearer {new_token}",
-        httponly=True,
-        samesite="none",
-        secure=True,
-    )
+    cookie_manager.set_jwt_cookie(response, new_token)
     return {"username": subject}
 
 

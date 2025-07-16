@@ -10,12 +10,14 @@ from app.auth_utils import AuthJwtCsrf
 from starlette.status import HTTP_201_CREATED
 from typing import List, Optional
 from fastapi_csrf_protect import CsrfProtect
+from app.cookie_utils import CookieManager
 import json
 from app.services.post_service import PostService
 from pydantic import ValidationError
 
 router = APIRouter()
 auth = AuthJwtCsrf()
+cookie_manager = CookieManager()
 
 
 @router.post("/api/posts", response_model=PostResponse)
@@ -35,13 +37,7 @@ def create_post(
         raise HTTPException(status_code=500, detail="Create post failed")
 
     response.status_code = HTTP_201_CREATED
-    response.set_cookie(
-        key="access_token",
-        value=f"Bearer {new_token}",
-        httponly=True,
-        samesite="none",
-        secure=True,
-    )
+    cookie_manager.set_jwt_cookie(response, new_token)
     if res:
         return res
     raise HTTPException(status_code=404, detail="Create post failed")
@@ -142,13 +138,7 @@ def update_post(
         print("500エラー発生")
         raise HTTPException(status_code=500, detail="Update post failed")
 
-    response.set_cookie(
-        key="access_token",
-        value=f"Bearer {new_token}",
-        httponly=True,
-        samesite="none",
-        secure=True,
-    )
+    cookie_manager.set_jwt_cookie(response, new_token)
     if result:
         return result
     raise HTTPException(status_code=404, detail="Update post failed")
@@ -183,13 +173,7 @@ def delete_post(
     except Exception as e:
         raise HTTPException(status_code=500, detail="Delete post failed")
 
-    response.set_cookie(
-        key="access_token",
-        value=f"Bearer {new_token}",
-        httponly=True,
-        samesite="none",
-        secure=True,
-    )
+    cookie_manager.set_jwt_cookie(response, new_token)
     if result:
         return {"message": f"Post {post_id} deleted successfully."}
     raise HTTPException(status_code=404, detail="Delete post failed")
