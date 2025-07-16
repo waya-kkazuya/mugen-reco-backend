@@ -12,8 +12,8 @@ from app.cruds.crud_like import (
 from starlette.status import HTTP_201_CREATED
 from typing import List
 from fastapi_csrf_protect import CsrfProtect
-from app.auth_utils import AuthJwtCsrf
-from app.cookie_utils import CookieManager
+from app.auth.auth_utils import AuthJwtCsrf
+from app.auth.cookie_utils import CookieManager
 
 router = APIRouter()
 auth = AuthJwtCsrf()

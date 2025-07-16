@@ -4,9 +4,9 @@ from app.cruds.crud_user import db_signup, db_login, db_get_user_by_username
 from app.schemas.common import SuccessMsg
 from app.schemas.auth import Csrf
 from app.schemas.user import UserBody, UserInfo, UsernameCheckResponse
-from app.auth_utils import AuthJwtCsrf
+from app.auth.auth_utils import AuthJwtCsrf
 from fastapi_csrf_protect import CsrfProtect
-from app.cookie_utils import CookieManager
+from app.auth.cookie_utils import CookieManager
 from typing import Annotated
 
 router = APIRouter()

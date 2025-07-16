@@ -8,9 +8,9 @@ from app.cruds.crud_comment import (
     db_delete_comment,
     db_get_single_comment,
 )
-from app.auth_utils import AuthJwtCsrf
+from app.auth.auth_utils import AuthJwtCsrf
 from fastapi_csrf_protect import CsrfProtect
-from app.cookie_utils import CookieManager
+from app.auth.cookie_utils import CookieManager
 from starlette.status import HTTP_201_CREATED
 from typing import List
 import logging
