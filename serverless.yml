@@ -1,0 +1,237 @@
+service: my-fastapi-app
+
+frameworkVersion: "^3.40.0" #自動でバージョンアップするのを防ぐ
+
+# カスタム設定
+custom:
+  environment:
+    dev:
+      COOKIE_DOMAIN: ""  # 開発環境では空文字（ドメイン設定なし）
+      # CORS_ORIGIN: "http://localhost:5173"
+      MAIN_ORIGIN: "http://localhost:5173"
+    prod:
+      # COOKIE_DOMAIN: ""
+      # CORS_ORIGIN: "https://www.mugen-reco.com" #こちらでないとダメ
+      COOKIE_DOMAIN: ".mugen-reco.com"
+      CORS_ORIGINS: "https://mugen-reco.com,https://www.mugen-reco.com"
+      MAIN_ORIGIN: "https://www.mugen-reco.com"
+
+  pythonRequirements:
+    dockerizePip: true # Dockerを起動、Lambdaの環境を再現
+    layer: true # レイヤーに保存
+
+provider:
+  name: aws
+  runtime: python3.11
+  region: ap-northeast-1
+  stage: ${opt:stage, 'prod'}
+  memorySize: 256
+  timeout: 30
+  environment:
+    TABLE_NAME: MugenRecoTable
+    STAGE: ${self:provider.stage}
+    REGION: ${self:provider.region}
+    JWT_KEY: ${ssm:MugenReco_JWT_KEY} # Parameter Storeから取得
+    CSRF_KEY: ${ssm:MugenReco_CSRF_KEY} # Parameter Storeから取得
+    ACCESS_TOKEN_EXPIRE_MINUTES: 15
+    IS_LOCAL: false
+    COOKIE_DOMAIN: ${self:custom.environment.${self:provider.stage}.COOKIE_DOMAIN}
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+            - dynamodb:BatchWriteItem
+            - dynamodb:BatchGetItem
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:ListTables
+          Resource:
+            - arn:aws:dynamodb:${self:provider.region}:${aws:accountId}:table/MugenRecoTable
+            - arn:aws:dynamodb:${self:provider.region}:${aws:accountId}:table/MugenRecoTable/index/*
+
+functions:
+  app:
+    handler: app.main.handler
+    events:
+      # ルートパス用
+      - http:
+          path: /
+          method: any
+          cors:
+            # 開発では'http://localhost:5173'
+            origin: ${self:custom.environment.${self:provider.stage}.MAIN_ORIGIN}
+            headers:
+              - Content-Type
+              - Authorization
+              - X-CSRF-TOKEN
+            allowCredentials: true
+      
+      # 全てのパスをキャッチするプロキシ
+      - http:
+          path: /{proxy+}
+          method: any
+          cors:
+            # 開発では'http://localhost:5173'
+            origin: ${self:custom.environment.${self:provider.stage}.MAIN_ORIGIN}
+            headers:
+              - Content-Type
+              - Authorization
+              - X-CSRF-TOKEN
+            allowCredentials: true
+
+    environment:  # 環境変数の定義
+      API_GATEWAY_BASE_PATH: "/${self:provider.stage}"
+    layers:
+      # serverless-python-requirementsプラグインで作成したLayerを利用する設定を記述
+      # https://www.serverless.com/plugins/serverless-python-requirements#lambda-layer
+      - { Ref: PythonRequirementsLambdaLayer }
+
+# 追加した部分
+resources:
+  Resources:
+    GatewayResponseDefault4XX:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        ResponseType: DEFAULT_4XX
+        ResponseParameters:
+          # 開発では'http://localhost:5173'
+          gatewayresponse.header.Access-Control-Allow-Origin: "'https://mugen-reco.com'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'Content-Type,X-CSRF-TOKEN,Authorization'"
+          gatewayresponse.header.Access-Control-Allow-Credentials: "'true'"  # 追加
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+
+    GatewayResponseDefault5XX:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        ResponseType: DEFAULT_5XX
+        ResponseParameters:
+          # 開発では'http://localhost:5173'
+          gatewayresponse.header.Access-Control-Allow-Origin: "'https://mugen-reco.com'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'Content-Type,X-CSRF-TOKEN,Authorization'"
+          gatewayresponse.header.Access-Control-Allow-Credentials: "'true'"  # 追加
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+
+plugins:
+  - serverless-python-requirements
+
+# serverless-python-requirementsでバンドルするファイルの設定
+package:
+  patterns:
+    # ❌ 一旦すべて除外する
+    - '!**'  
+
+    # ✅ 含めるファイル・フォルダだけ明示する
+    - app/**                # FastAPI アプリ本体（app/ディレクトリ）
+    - requirements.txt      # 依存関係の定義
+    - serverless.yml        # Serverless Framework の設定
+    - main.py               # Lambda handler 指定されている場合
+
+# package:
+#   patterns:
+#     - '!**/.env'
+#     - '!**/.env.*'
+#     - '!**/__pycache__/**'
+#     - '!**/.pytest_cache/**'
+#     - '!**/venv/**'
+#     - '!**/env_portfolio_api/**'
+#     - '!**/tests/**'
+#     - '!**/node_modules/**'
+#     - '!**/package/**'
+#     - '!**/workspace/**'
+#     - '!**/docker/**'
+#     - '!**/.github/**'
+
+# これは新規作成時のDynamoDB初期設定
+# resources:
+#   Resources:
+#     MugenRecoTable:
+#       Type: AWS::DynamoDB::Table
+#       Properties:
+#         TableName: MugenRecoTable
+#         BillingMode: PROVISIONED  # もしもの時の保険にプロビジョンド
+#         ProvisionedThroughput:
+#           ReadCapacityUnits: 5
+#           WriteCapacityUnits: 5
+#         AttributeDefinitions:
+#           - AttributeName: PK
+#             AttributeType: S
+#           - AttributeName: SK
+#             AttributeType: S
+#           - AttributeName: GSI1_PK
+#             AttributeType: S
+#           - AttributeName: GSI1_SK
+#             AttributeType: S
+#           - AttributeName: GSI2_PK
+#             AttributeType: S
+#           - AttributeName: GSI2_SK
+#             AttributeType: S
+#           - AttributeName: GSI3_PK
+#             AttributeType: S
+#           - AttributeName: GSI3_SK
+#             AttributeType: S
+#           - AttributeName: GSI4_PK
+#             AttributeType: S
+#           - AttributeName: GSI4_SK
+#             AttributeType: S
+#         KeySchema:
+#           - AttributeName: PK
+#             KeyType: HASH
+#           - AttributeName: SK
+#             KeyType: RANGE
+#         GlobalSecondaryIndexes:
+#           - IndexName: GSI_PostList
+#             KeySchema:
+#               - AttributeName: GSI1_PK
+#                 KeyType: HASH
+#               - AttributeName: GSI1_SK
+#                 KeyType: RANGE
+#             Projection:
+#               ProjectionType: ALL
+#             ProvisionedThroughput:
+#               ReadCapacityUnits: 5
+#               WriteCapacityUnits: 5
+
+#           - IndexName: GSI_Category
+#             KeySchema:
+#               - AttributeName: GSI2_PK
+#                 KeyType: HASH
+#               - AttributeName: GSI2_SK
+#                 KeyType: RANGE
+#             Projection:
+#               ProjectionType: ALL
+#             ProvisionedThroughput:
+#               ReadCapacityUnits: 5
+#               WriteCapacityUnits: 5
+
+#           - IndexName: GSI_UserPosts
+#             KeySchema:
+#               - AttributeName: GSI3_PK
+#                 KeyType: HASH
+#               - AttributeName: GSI3_SK
+#                 KeyType: RANGE
+#             Projection:
+#               ProjectionType: ALL
+#             ProvisionedThroughput:
+#               ReadCapacityUnits: 5
+#               WriteCapacityUnits: 5
+
+#           - IndexName: GSI_Username
+#             KeySchema:
+#               - AttributeName: GSI4_PK
+#                 KeyType: HASH
+#               - AttributeName: GSI4_SK
+#                 KeyType: RANGE
+#             Projection:
+#               ProjectionType: ALL
+#             ProvisionedThroughput:
+#               ReadCapacityUnits: 5
+#               WriteCapacityUnits: 5
+
+# ※GSI_5も追加したので、ここに反映させる

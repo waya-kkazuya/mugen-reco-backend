@@ -6,11 +6,13 @@ from decouple import config
 from typing import Optional
 
 JWT_KEY = config("JWT_KEY")
+ACCESS_TOKEN_EXPIRE_MINUTES = config("ACCESS_TOKEN_EXPIRE_MINUTES", cast=int)
 
 
 class AuthJwtCsrf:
     pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
     secret_key = JWT_KEY
+    access_token_expire_minutes = ACCESS_TOKEN_EXPIRE_MINUTES
 
     def generate_hashed_pw(self, password) -> str:
         return self.pwd_ctx.hash(password)
@@ -21,8 +23,10 @@ class AuthJwtCsrf:
     def encode_jwt(self, username) -> str:
         payload = {
             "exp": datetime.now(timezone.utc)
-            + timedelta(days=0, minutes=5),  # expires有効期限 5分
-            "iat": datetime.now(timezone.utc),  # issuedat JWTの生成日時
+            + timedelta(
+                days=0, minutes=self.access_token_expire_minutes
+            ),  # JWTの有効期限
+            "iat": datetime.now(timezone.utc),  # JWTの生成日時
             "sub": username,
         }
         return jwt.encode(payload, self.secret_key, algorithm="HS256")
