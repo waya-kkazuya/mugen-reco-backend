@@ -1,7 +1,8 @@
 # 無限レコ バックエンド
 
-このリポジトリは、おすすめベスト3投稿アプリ「無限レコ」の**バックエンドAPI**です。  
-FastAPI + AWS Lambda + DynamoDBで構築されており、Serverless Frameworkによりサーバーレス環境へデプロイ可能です。
+このリポジトリは、おすすめ投稿アプリ「無限レコ」の**バックエンドAPI**です。  
+FastAPI + AWS Lambda + DynamoDBで構築されています。
+Serverless Frameworkによりサーバーレス環境へデプロイ可能です。
 
 
 ## 1. 使用技術
@@ -27,8 +28,8 @@ FastAPI + AWS Lambda + DynamoDBで構築されており、Serverless Framework�
 ### 投稿関連
 | メソッド     | エンドポイント                         | 概要                 |
 | -------- | ------------------------------- | ------------------ |
-| `GET`    | `/api/posts`                    | 投稿一覧の取得（無限スクロール対応） |
-| `GET`    | `/api/posts/category/{category}`                    | カテゴリごとの投稿一覧の取得（無限スクロール対応） |
+| `GET`    | `/api/posts`                    | 投稿一覧の取得 |
+| `GET`    | `/api/posts/category/{category}`                    | カテゴリごとの投稿一覧の取得 |
 | `GET` | `/api/users/{username}/posts`          | ログインユーザーの投稿一覧取得              |
 | `GET` | `/api/users/{username}/liked-posts`          | ログインユーザーがいいねした投稿一覧取得              |
 | `POST`   | `/api/posts`                    | 新規投稿の作成            |
@@ -46,13 +47,13 @@ FastAPI + AWS Lambda + DynamoDBで構築されており、Serverless Framework�
 ### いいね関連
 | メソッド     | エンドポイント                         | 概要                 |
 | -------- | ------------------------------- | ------------------ |
-| `GET`   | `/api/posts/{post_id}/likes/status`            | ログインユーザーがの投稿に対するいいね状態を取得             |
-| `POST`   | `/api/posts/{post_id}/like-toggle`            | ログインユーザーがの投稿に対するいいね状態を切り替え             |
+| `GET`   | `/api/posts/{post_id}/likes/status`            | ログインユーザーの投稿に対するいいね状態を取得             |
+| `POST`   | `/api/posts/{post_id}/like-toggle`            | ログインユーザーの投稿に対するいいね状態を切り替え             |
 
 ### カテゴリ関連
 | メソッド     | エンドポイント                         | 概要                 |
 | -------- | ------------------------------- | ------------------ |
-| `GET`   | `/api/categories`            | カテゴリ一覧             |
+| `GET`   | `/api/categories`            | カテゴリ一覧 を取得            |
 
 ### 認証関連
 | メソッド     | エンドポイント                         | 概要                 |
@@ -60,8 +61,8 @@ FastAPI + AWS Lambda + DynamoDBで構築されており、Serverless Framework�
 | `POST`   | `/api/register`            | ユーザー登録             |
 | `POST`   | `/api/login`               | ログイン               |
 | `POST`   | `/api/logout`              | ログアウト              |
-| `POST`   | `/api/user`              | ログアウト              |
-| `POST`   | `/api/check-username/{username}`              | ユーザー名重複チェック              |
+| `POST`   | `/api/user`              | ログインユーザーのusernameを取得              |
+| `POST`   | `/api/check-username/{username}`              | ユーザー登録における名前重複チェック              |
 | `POST`   | `/api/csrftoken`              | CSRFトークンを取得              |
 
 ---
@@ -74,6 +75,7 @@ FastAPI + AWS Lambda + DynamoDBで構築されており、Serverless Framework�
   - ユーザーIDに基づき、新規作成・編集・削除の操作制限を実施
 
 - **CSRF対策**
+  - バックエンドでCSRFトークンを発行（`/api/csrftoken`エンドポイント）
   - フロントエンドでCSRFトークンを `X-CSRF-Token` ヘッダーに自動付与
   - バックエンドで照合して検証
 
@@ -142,9 +144,9 @@ serverless.yml              # Serverless Frameworkの設定
 ---
 
 ## 7. 今後の予定
-- テストコードの追加
 - RefreshTokenの実装
 - 検索機能（AWSのOpenSearchとの連携）
+- テストコードの追加
 
 ---
 
@@ -180,9 +182,8 @@ export CSRF_KEY=$(python -c "import secrets; print(secrets.token_urlsafe(32))")
 docker compose up
 ```
 
-### NoSQL WorkbenchでDBデータを表示（任意）
-AWSからダウンロード・インストール・起動
-https://docs.aws.amazon.com/ja_jp/amazondynamodb/latest/developerguide/workbench.html
+### NoSQL Workbenchを起動してDBデータを確認（任意）
+[AWSからダウンロードhttps://docs.aws.amazon.com/ja_jp/amazondynamodb/latest/developerguide/workbench.html](https://docs.aws.amazon.com/ja_jp/amazondynamodb/latest/developerguide/workbench.html)
 
 
 ### 開発サーバー起動
