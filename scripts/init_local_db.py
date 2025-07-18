@@ -97,7 +97,7 @@ SAMPLE_USERS = [
 SAMPLE_POSTS = [
     {
         "username": "alice_food",
-        "category": "本",
+        "category": "BOOK",
         "title": "人生を変えた自己啓発書ベスト3",
         "description": "実際に読んで価値観や行動が変わった、おすすめの自己啓発書を紹介します。",
         "recommend1": "7つの習慣 - 効果的な人格形成の原則",
@@ -106,7 +106,7 @@ SAMPLE_POSTS = [
     },
     {
         "username": "bob_tech",
-        "category": "健康",
+        "category": "HEALTH",
         "title": "毎日続けられる健康習慣ベスト3",
         "description": "忙しい日常でも継続しやすく、効果を実感できる健康習慣をまとめました。",
         "recommend1": "朝の10分ウォーキング - 代謝アップと気分転換",
@@ -115,7 +115,7 @@ SAMPLE_POSTS = [
     },
     {
         "username": "charlie_travel",
-        "category": "スイーツ",
+        "category": "SWEETS",
         "title": "東京で絶対食べたいスイーツベスト3",
         "description": "インスタ映えも味も最高！都内で話題のスイーツ店を厳選しました。",
         "recommend1": "ルタオ チーズケーキ - 濃厚でなめらかな食感",
@@ -123,17 +123,8 @@ SAMPLE_POSTS = [
         "recommend3": "高級いちご大福 - 季節限定の贅沢な味わい",
     },
     {
-        "username": "diana_books",
-        "category": "カフェ",
-        "title": "作業がはかどるおしゃれカフェベスト3",
-        "description": "WiFi完備で長時間利用OK！集中して作業できる都内のカフェを紹介。",
-        "recommend1": "ブルーボトルコーヒー - 静かで落ち着いた雰囲気",
-        "recommend2": "スターバックス リザーブ - 高品質コーヒーと快適空間",
-        "recommend3": "ドトール カフェ - コスパ良好で気軽に利用",
-    },
-    {
         "username": "eve_movies",
-        "category": "アプリ",
+        "category": "APP",
         "title": "生活が便利になるアプリベスト3",
         "description": "日常生活で本当に役立つ、手放せなくなったアプリを厳選して紹介します。",
         "recommend1": "Google マップ - 最強のナビゲーションアプリ",
@@ -142,7 +133,7 @@ SAMPLE_POSTS = [
     },
     {
         "username": "alice_food",
-        "category": "ゲーム",
+        "category": "GAME",
         "title": "友達と盛り上がるゲームベスト3",
         "description": "オンラインでもオフラインでも楽しめる、みんなでワイワイできるゲーム！",
         "recommend1": "Among Us - 推理と騙し合いが楽しい",
@@ -151,7 +142,7 @@ SAMPLE_POSTS = [
     },
     {
         "username": "bob_tech",
-        "category": "マンガ",
+        "category": "COMIC",
         "title": "一気読み必至の名作マンガベスト3",
         "description": "読み始めたら止まらない！徹夜してでも読みたくなる傑作マンガです。",
         "recommend1": "鬼滅の刃 - 感動的なストーリーと美しい作画",
@@ -160,7 +151,7 @@ SAMPLE_POSTS = [
     },
     {
         "username": "charlie_travel",
-        "category": "ごはん",
+        "category": "FOOD",
         "title": "東京の絶品ラーメン店ベスト3",
         "description": "都内で食べ歩いた中から、本当に美味しいラーメン店を厳選しました。",
         "recommend1": "一蘭 渋谷店 - 豚骨スープの濃厚さが絶品",
@@ -169,7 +160,7 @@ SAMPLE_POSTS = [
     },
     {
         "username": "diana_books",
-        "category": "お酒",
+        "category": "ALCOHOL",
         "title": "家飲みにおすすめの日本酒ベスト3",
         "description": "日本酒初心者でも飲みやすく、コンビニでも買える美味しい銘柄を紹介。",
         "recommend1": "獺祭 純米大吟醸 - フルーティーで飲みやすい",
@@ -178,7 +169,7 @@ SAMPLE_POSTS = [
     },
     {
         "username": "eve_movies",
-        "category": "旅行",
+        "category": "TRAVEL",
         "title": "日本の絶景温泉地ベスト3",
         "description": "一度は訪れたい、景色も温泉も最高の癒しスポットを厳選しました。",
         "recommend1": "草津温泉 - 湯畑の景色と良質な湯",
@@ -187,7 +178,7 @@ SAMPLE_POSTS = [
     },
     {
         "username": "alice_food",
-        "category": "音楽",
+        "category": "MUSIC",
         "title": "作業BGMにぴったりな音楽ベスト3",
         "description": "集中力がアップする！リラックスしながら作業できる音楽を紹介します。",
         "recommend1": "Lo-fi Hip Hop - 心地よいビートでリラックス",
@@ -196,7 +187,7 @@ SAMPLE_POSTS = [
     },
     {
         "username": "bob_tech",
-        "category": "アニメ",
+        "category": "ANIME",
         "title": "大人が見ても面白いアニメベスト3",
         "description": "子供だけでなく大人も楽しめる、深いストーリーのアニメ作品です。",
         "recommend1": "君の名は。 - 美しい映像と感動的なストーリー",
@@ -205,7 +196,7 @@ SAMPLE_POSTS = [
     },
     {
         "username": "charlie_travel",
-        "category": "映画",
+        "category": "MOVIE",
         "title": "心に残る感動映画ベスト3",
         "description": "何度見ても泣いてしまう、心に響く感動的な映画をセレクトしました。",
         "recommend1": "タイタニック - 永遠の愛を描いた名作",
