@@ -155,8 +155,8 @@ DynamoDB LocalをDockerコンテナで起動するためWSLが必要です。
 
 ### リポジトリをクローン
 ```bash
-git clone https://github.com/waya-kkazuya/infinite-reco.git
-cd infinite-reco
+git clone https://github.com/waya-kkazuya/mugen-reco-backend.git
+cd mugen-reco-backend
 ```
 ### 仮想環境作成（任意）
 ```bash
