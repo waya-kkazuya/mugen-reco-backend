@@ -1123,6 +1123,127 @@ SAMPLE_POSTS = [
         "recommend2": "リトル・ミス・サンシャイン - 家族の絆を描いたハートフル・コメディ",
         "recommend3": "500日のサマー - 非線形の構成が印象的な恋愛映画",
     },
+    # testuser用サンプルデータ（各カテゴリ1件ずつ）
+    # BOOK カテゴリ
+    {
+        "username": "testuser",
+        "category": "BOOK",
+        "title": "プログラマーにおすすめの技術書ベスト3",
+        "description": "実際にコーディングスキルが向上した、プログラマー必読の技術書を紹介します。",
+        "recommend1": "Clean Code - ロバート・C・マーチン",
+        "recommend2": "Design Patterns - GoF",
+        "recommend3": "Effective Java - ジョシュア・ブロック",
+    },
+    # HEALTH カテゴリ
+    {
+        "username": "testuser",
+        "category": "HEALTH",
+        "title": "在宅勤務で実践している健康法ベスト3",
+        "description": "リモートワーク中心の生活で、体調管理のために実際に続けている健康習慣です。",
+        "recommend1": "毎時間5分のデスク周りストレッチ",
+        "recommend2": "昼休みに15分の散歩",
+        "recommend3": "ブルーライトカット眼鏡の着用",
+    },
+    # SWEETS カテゴリ
+    {
+        "username": "testuser",
+        "category": "SWEETS",
+        "title": "疲れた時に食べたいコンビニスイーツベスト3",
+        "description": "仕事で疲れた時のご褒美として、手軽に買えて美味しいコンビニスイーツを厳選。",
+        "recommend1": "セブンイレブン ティラミス - 本格的な味わい",
+        "recommend2": "ローソン ウチカフェシリーズ - コスパ抜群",
+        "recommend3": "ファミマ チーズタルト - 濃厚で満足感あり",
+    },
+    # APP カテゴリ
+    {
+        "username": "testuser",
+        "category": "APP",
+        "title": "開発効率を上げるツールアプリベスト3",
+        "description": "プログラミングやタスク管理で日常的に使っている、作業効率化アプリです。",
+        "recommend1": "Visual Studio Code - 軽量で拡張性の高いエディタ",
+        "recommend2": "Slack - チームコミュニケーションの定番",
+        "recommend3": "Trello - カンバン方式のタスク管理",
+    },
+    # GAME カテゴリ
+    {
+        "username": "testuser",
+        "category": "GAME",
+        "title": "息抜きに最適なカジュアルゲームベスト3",
+        "description": "仕事の合間や移動中にサクッと楽しめる、手軽で面白いゲームを紹介。",
+        "recommend1": "Wordle - 毎日挑戦できる英単語パズル",
+        "recommend2": "2048 - シンプルだが奥深い数字パズル",
+        "recommend3": "Fall Guys - カラフルで楽しいバトルロワイヤル",
+    },
+    # COMIC カテゴリ
+    {
+        "username": "testuser",
+        "category": "COMIC",
+        "title": "IT業界で働く人におすすめのマンガベスト3",
+        "description": "エンジニアや IT関係者なら共感できる、テック業界を題材にしたマンガです。",
+        "recommend1": "NEW GAME! - ゲーム業界の日常を描いた4コマ",
+        "recommend2": "王様達のヴァイキング - ハッカーと起業家の物語",
+        "recommend3": "インベスターZ - 投資とお金の仕組みを学べる",
+    },
+    # FOOD カテゴリ
+    {
+        "username": "testuser",
+        "category": "FOOD",
+        "title": "一人暮らしの簡単料理ベスト3",
+        "description": "料理初心者でも失敗しない、材料少なめで美味しく作れる簡単レシピです。",
+        "recommend1": "チャーハン - 冷蔵庫の余り物で作れる",
+        "recommend2": "親子丼 - 卵と鶏肉で手軽に丼物",
+        "recommend3": "野菜炒め - 栄養バランスも取れる万能おかず",
+    },
+    # ALCOHOL カテゴリ
+    {
+        "username": "testuser",
+        "category": "ALCOHOL",
+        "title": "宅飲みにおすすめのお酒ベスト3",
+        "description": "家での晩酌タイムを充実させる、コスパの良い美味しいお酒を厳選しました。",
+        "recommend1": "ハイボール - ウイスキーと炭酸で爽やか",
+        "recommend2": "缶チューハイ - 手軽で種類豊富",
+        "recommend3": "赤ワイン - 料理との相性も抜群",
+    },
+    # TRAVEL カテゴリ
+    {
+        "username": "testuser",
+        "category": "TRAVEL",
+        "title": "関東から日帰りで行ける観光地ベスト3",
+        "description": "東京から電車で気軽にアクセスできる、日帰り旅行におすすめのスポットです。",
+        "recommend1": "鎌倉 - 歴史ある寺社と美しい海岸線",
+        "recommend2": "川越 - 小江戸の風情ある街並み",
+        "recommend3": "日光 - 東照宮と華厳の滝の絶景",
+    },
+    # MUSIC カテゴリ
+    {
+        "username": "testuser",
+        "category": "MUSIC",
+        "title": "集中したい時に聴く音楽ベスト3",
+        "description": "プログラミングや勉強など、集中作業時のBGMとして愛用している音楽です。",
+        "recommend1": "環境音楽 - 雨音や森の音でリラックス",
+        "recommend2": "ピアノインストゥルメンタル - 邪魔にならない美しいメロディー",
+        "recommend3": "Lo-fi Jazz - 心地よいリズムで集中力アップ",
+    },
+    # ANIME カテゴリ
+    {
+        "username": "testuser",
+        "category": "ANIME",
+        "title": "IT系の人におすすめのアニメベスト3",
+        "description": "プログラマーやエンジニアなら楽しめる、科学技術をテーマにしたアニメです。",
+        "recommend1": "STEINS;GATE - タイムトラベルとコンピュータサイエンス",
+        "recommend2": "攻殻機動隊 - サイバーパンクの金字塔",
+        "recommend3": "電脳コイル - AR技術を扱った近未来SF",
+    },
+    # MOVIE カテゴリ
+    {
+        "username": "testuser",
+        "category": "MOVIE",
+        "title": "プログラマーが観るべき映画ベスト3",
+        "description": "ITやプログラミングに関連した題材で、技術者なら一度は見ておきたい映画です。",
+        "recommend1": "ソーシャル・ネットワーク - Facebook創設の裏側",
+        "recommend2": "マトリックス - プログラミングとは何かを考える",
+        "recommend3": "スティーブ・ジョブズ - Apple創業者の伝記映画",
+    },
 ]
 
 
@@ -1270,10 +1391,13 @@ def create_sample_posts(table):
     """サンプル投稿作成"""
     print("📝 サンプル投稿を作成中...")
 
+    shuffled_posts = SAMPLE_POSTS.copy()
+    random.shuffle(shuffled_posts)
+
     posts_created = []
     base_time = datetime.utcnow()
 
-    for i, post_data in enumerate(SAMPLE_POSTS):
+    for i, post_data in enumerate(shuffled_posts):
         try:
             post_id = str(uuid.uuid4())
             # 時間を少しずつずらして作成
