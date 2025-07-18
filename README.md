@@ -145,13 +145,13 @@ serverless.yml              # Serverless Frameworkの設定
 
 ## 7. 今後の予定
 - RefreshTokenの実装
-- 検索機能（AWSのOpenSearchとの連携）
+- 検索機能の実装（AWSのOpenSearchとの連携）
 - テストコードの追加
 
 ---
 
-## 8.ローカル開発の手順（WindowsのWSL上で確認済み）
-※DynamoDB LocalをDockerコンテナで起動するためWSLが必要
+## 8.ローカル開発環境のセットアップ手順（WindowsのWSL上で確認済み）
+DynamoDB LocalをDockerコンテナで起動するためWSLが必要です。
 
 ### リポジトリをクローン
 ```bash
@@ -160,7 +160,7 @@ cd infinite-reco
 ```
 ### 仮想環境作成（任意）
 ```bash
-python -m venv fastapi_project_env
+python3 -m venv fastapi_project_env
 source fastapi_project_env/bin/activate
 ```
 
@@ -173,54 +173,37 @@ pip install -r requirements.txt
 ```bash
 cp .env.example .env
 
-export JWT_KEY=$(python -c "import secrets; print(secrets.token_urlsafe(32))")
-export CSRF_KEY=$(python -c "import secrets; print(secrets.token_urlsafe(32))")
+echo "" >> .env
+echo "JWT_KEY=$(python -c "import secrets; print(secrets.token_urlsafe(32))")" >> .env
+echo "CSRF_KEY=$(python -c "import secrets; print(secrets.token_urlsafe(32))")" >> .env
 ```
 
 ### DynamoDB LocalをDockerコンテナで起動
+先にDockerを起動します
 ```bash
 docker compose up
+
+sudo chown -R 1000:1000 ./data/ #volumesの所有者を変更（ファイル権限を適切に設定）
 ```
 
-### NoSQL Workbenchを起動してDBデータを確認（任意）
-[AWSからダウンロードhttps://docs.aws.amazon.com/ja_jp/amazondynamodb/latest/developerguide/workbench.html](https://docs.aws.amazon.com/ja_jp/amazondynamodb/latest/developerguide/workbench.html)
+### ダミーデータの挿入
+```bash
+python scripts/init_db.py #テーブル作成・ダミーデータ追加
 
+python scripts/init_db.py --delete #テーブル・データの全削除（必要に応じて）
+```
 
 ### 開発サーバー起動
+DynamoDBで8000ポートを使用するので、uvicornでは8001を使用
 ```bash
 uvicorn app.main:app --reload --port 8001
 ```
 
+### データベース確認（オプション）
+NoSQL Workbenchを使用してDynamoDBのデータを視覚的に確認できます。
+[AWS公式サイトからダウンロード](https://docs.aws.amazon.com/ja_jp/amazondynamodb/latest/developerguide/workbench.html)
+
 ---
-
-<!-- ## デプロイ手順（Serverless Framework）
-
-### 前提条件
-AWS CLIでのIAMユーザーの認証済み
-
-### nvmをインストール（任意）
-```bash
-インストール
-nvm use 20
-```
-
-### Serverlessをインストール（初回のみ）
-npm install -g serverless
-
-
-### デプロイ実行
-```bash
-開発用 npx sls deploy --stage dev --verbose
-本番用 npx sls deploy --stage prod --verbose
-（※--vervboseはデプロイの詳細表示用）
-```
-
-### デプロイ削除
-```bash
-開発用 npx sls remove --stage dev
-本番用 npx sls remove --stage prod
-```
---- -->
 
 ## 関連リポジトリへのリンク
 - [無限レコ 統合ランディングページ](https://github.com/waya-kkazuya/infinite-reco-portfolio)
