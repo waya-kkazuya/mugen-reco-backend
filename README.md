@@ -198,6 +198,9 @@ DynamoDBで8000ポートを使用するので、uvicornでは8001を使用
 ```bash
 uvicorn app.main:app --reload --port 8001
 ```
+起動後、Swagger UI（APIドキュメント）にアクセス
+👉 http://127.0.0.1:8001/docs
+
 
 ### データベース確認（オプション）
 NoSQL Workbenchを使用してDynamoDBのデータを視覚的に確認できます。
@@ -206,8 +209,8 @@ NoSQL Workbenchを使用してDynamoDBのデータを視覚的に確認できま
 ---
 
 ## 関連リポジトリへのリンク
-- [無限レコ 統合ランディングページ](https://github.com/waya-kkazuya/infinite-reco-portfolio)
-- [無限レコ フロントエンド](https://github.com/waya-kkazuya/infinite-reco-frontend)
+- [無限レコ 統合ランディングページ](https://github.com/waya-kkazuya/mugen-reco-portfolio)
+- [無限レコ フロントエンド](https://github.com/waya-kkazuya/mugen-reco-frontend)
 
 ---
 
