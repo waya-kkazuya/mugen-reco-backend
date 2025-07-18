@@ -188,9 +188,9 @@ sudo chown -R 1000:1000 ./data/ #volumesの所有者を変更（ファイル権�
 
 ### ダミーデータの挿入
 ```bash
-python scripts/init_db.py #テーブル作成・ダミーデータ追加
+python3 scripts/init_local_db.py #テーブル作成・ダミーデータ追加
 
-python scripts/init_db.py --delete #テーブル・データの全削除（必要に応じて）
+python3 scripts/init_local_db.py --delete #テーブル・データの全削除（必要に応じて）
 ```
 
 ### 開発サーバー起動
