@@ -1,5 +1,5 @@
 from app.database import table
-from typing import Union, List
+from typing import Union
 from datetime import datetime, timezone
 import uuid
 from boto3.dynamodb.conditions import Key
@@ -11,7 +11,7 @@ auth = AuthJwtCsrf()
 
 
 def db_create_user(username: str, password_hash: str) -> Union[dict, bool]:
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     user_id = str(uuid.uuid4())
 
     # ユーザー名の
