@@ -5,7 +5,6 @@ from typing import Union, List, Optional, Dict, Any
 import uuid
 from datetime import datetime, timezone
 import traceback
-import json
 
 
 # 降順＝新しい順にソート
@@ -121,7 +120,7 @@ def db_get_single_post(post_id: str) -> Union[dict, bool]:
 def db_create_post(username: str, data: dict) -> Union[dict, bool]:
     try:
         post_id = str(uuid.uuid4())
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
 
         # ここでJSON型に加工
         item = {
@@ -170,7 +169,7 @@ def db_create_post(username: str, data: dict) -> Union[dict, bool]:
 
 def db_update_post(post_id: str, data: dict) -> Union[dict, bool]:
     try:
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
 
         existing_item = table.get_item(Key={"PK": f"POST#{post_id}", "SK": "META"}).get(
             "Item"

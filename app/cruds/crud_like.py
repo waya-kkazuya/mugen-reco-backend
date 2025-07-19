@@ -1,7 +1,7 @@
 from app.database import table
 from boto3.dynamodb.conditions import Key
 from typing import Union
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 def db_get_like(post_id: str, username: str) -> Union[dict, bool]:
@@ -22,7 +22,7 @@ def db_get_like_status(post_id: str, username: str) -> bool:
 
 
 def db_add_like(post_id: str, username: str) -> bool:
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
 
     item = {
         "PK": f"POST#{post_id}",

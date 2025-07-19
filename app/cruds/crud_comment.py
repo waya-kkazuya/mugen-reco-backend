@@ -2,7 +2,7 @@ from boto3.dynamodb.conditions import Key
 from app.database import table
 from typing import Union, List
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from .crud_post import db_get_single_post
 from fastapi import HTTPException
 
@@ -17,7 +17,7 @@ def db_create_comment(username: str, post_id: str, data: dict) -> Union[dict, bo
         raise HTTPException(status_code=404, detail="Post not found")
 
     comment_id = str(uuid.uuid4())
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
 
     item = {
         "PK": f"POST#{post_id}",

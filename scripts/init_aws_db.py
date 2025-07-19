@@ -6,7 +6,7 @@
 import boto3
 import uuid
 import hashlib
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from botocore.exceptions import ClientError
 import random
 
@@ -1342,7 +1342,7 @@ def create_sample_users(table):
     for user_data in SAMPLE_USERS:
         try:
             user_id = str(uuid.uuid4())
-            now = datetime.utcnow().isoformat()
+            now = datetime.now(timezone.utc).isoformat()
             username = user_data["username"]
             password_hash = hash_password(user_data["password"])
 
@@ -1470,7 +1470,7 @@ def create_sample_likes(table, posts_created):
 
             try:
                 post_id = post["post_id"]
-                now = datetime.utcnow().isoformat()
+                now = datetime.now(timezone.utc).isoformat()
 
                 item = {
                     "PK": f"POST#{post_id}",
