@@ -14,8 +14,8 @@ from app.auth.cookie_utils import CookieManager
 from starlette.status import HTTP_201_CREATED
 from typing import List
 import logging
-import traceback
 import sys
+from app.exceptions import CommentOwnershipError
 
 # ✅ 基本設定（ファイルの最上部に配置）
 logging.basicConfig(
@@ -39,38 +39,37 @@ def create_comment(
     data: CommentBody,
     csrf_protect: CsrfProtect = Depends(),
 ):
+    logger.info(f"[ROUTE] Creating comment: post_id={post_id}")
 
     new_token, username = auth.verify_csrf_update_jwt(
         request, csrf_protect, request.headers
     )
-    logger.warning("🔍 === CREATE COMMENT START ===")
-    logger.warning(f"🔍 Post ID: {post_id}")
-    try:
-        res = db_create_comment(username, post_id, data)
-        print("db_create_comment後")
-        response.status_code = HTTP_201_CREATED
-        cookie_manager.set_jwt_cookie(response, new_token)
-        return res
-    except HTTPException:
-        raise
-    except Exception as e:
-        print(f"❌ Unexpected error: {str(e)}")
-        print(f"🔍 Error type: {type(e)}")
-        print("🔍 Traceback:\n", traceback.format_exc())
-        raise HTTPException(status_code=500, detail="Create comment failed")
+
+    logger.debug(
+        f"[ROUTE] User authenticated for comment creation: username={username}"
+    )
+
+    res = db_create_comment(username, post_id, data)
+
+    response.status_code = HTTP_201_CREATED
+    cookie_manager.set_jwt_cookie(response, new_token)
+    logger.info(
+        f"[ROUTE] Comment created successfully: post_id={post_id}, comment_id={res.get('comment_id')}, username={username}"
+    )
+    return res
 
 
 # ログインしなくても見れるようにするので、JWT認証は必要なし
 @router.get("/api/posts/{post_id}/comments", response_model=List[CommentResponse])
 def get_comments(post_id: str):
-    logger.warning("🔍 === GET COMMENTS START ===")
-    logger.warning(f"🔍 Post ID: {post_id}")
-    try:
-        res = db_get_comments(post_id)
-        print(res)
-        return res
-    except Exception as e:
-        raise HTTPException(status_code=500, detail="Get comment failed")
+    logger.info(f"[ROUTE] Getting comments for post: post_id={post_id}")
+
+    res = db_get_comments(post_id)
+
+    logger.info(
+        f"[ROUTE] Comments retrieved successfully: post_id={post_id}, count={len(res)}"
+    )
+    return res
 
 
 @router.delete("/api/posts/{post_id}/comments/{comment_id}", response_model=SuccessMsg)
@@ -81,29 +80,28 @@ def delete_comment(
     comment_id: str,
     csrf_protect: CsrfProtect = Depends(),
 ):
+    logger.info(f"[ROUTE] Deleting comment: post_id={post_id}, comment_id={comment_id}")
+
     new_token, username = auth.verify_csrf_update_jwt(
         request, csrf_protect, request.headers
     )
-    print(f"Looking for comment: post_id={post_id}, comment_id={comment_id}")
+
+    logger.debug(
+        f"[ROUTE] User authenticated for comment deletion: username={username}"
+    )
 
     # 認可: コメントの所有者か確認
     comment = db_get_single_comment(post_id, comment_id)
-    print(f"Comment found: {comment}")  # デバッグログ
-    if not comment:
-        raise HTTPException(status_code=404, detail="Comment not found")
-
     if comment["username"] != username:
-        raise HTTPException(
-            status_code=403, detail="Not authorized to delete this comment"
+        logger.warning(
+            f"[ROUTE] Unauthorized comment deletion attempt: post_id={post_id}, comment_id={comment_id}, username={username}, owner={comment['username']}"
         )
+        raise CommentOwnershipError(message="このコメントを削除する権限がありません。")
 
-    try:
-        res = db_delete_comment(post_id, comment_id)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail="Delete comment failed")
-
+    res = db_delete_comment(post_id, comment_id)
     cookie_manager.set_jwt_cookie(response, new_token)
 
-    if res:
-        return {"message": f"Comment {comment_id} deleted successfully."}
-    raise HTTPException(status_code=404, detail="Delete comment failed")
+    logger.info(
+        f"[ROUTE] Comment deleted successfully: post_id={post_id}, comment_id={comment_id}, username={username}"
+    )
+    return {"message": f"Comment {comment_id} deleted successfully."}

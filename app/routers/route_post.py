@@ -7,14 +7,16 @@ from ..cruds.crud_post import (
     db_delete_post_and_related_items,
 )
 from starlette.status import HTTP_201_CREATED
-from typing import List, Optional
+from typing import Optional
 from app.auth.auth_utils import AuthJwtCsrf
 from app.auth.cookie_utils import CookieManager
 from fastapi_csrf_protect import CsrfProtect
 import json
 from app.services.post_service import PostService
-from pydantic import ValidationError
+import logging
+from app.exceptions import PostOwnershipError, UserPermissionError
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 auth = AuthJwtCsrf()
 cookie_manager = CookieManager()
@@ -27,20 +29,22 @@ def create_post(
     data: PostBody,
     csrf_protect: CsrfProtect = Depends(),
 ):
+    logger.info(f"[ROUTE] POST /api/posts called")
+
     new_token, username = auth.verify_csrf_update_jwt(
         request, csrf_protect, request.headers
     )
 
-    try:
-        res = PostService.create_post_with_like_info(username, data)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail="Create post failed")
+    logger.info(f"[ROUTE] Authentication successful for user: {username}")
+
+    res = PostService.create_post_with_like_info(username, data)
 
     response.status_code = HTTP_201_CREATED
     cookie_manager.set_jwt_cookie(response, new_token)
-    if res:
-        return res
-    raise HTTPException(status_code=404, detail="Create post failed")
+
+    logger.info(f"[ROUTE] POST /api/posts completed successfully for user: {username}")
+
+    return res
 
 
 # ログインしなくても見れるようにするので、JWT認証は必要なし
@@ -50,19 +54,21 @@ def get_posts_paginated(
     limit: int = Query(10, ge=1, le=50),
     last_evaluated_key: Optional[str] = None,
 ):
+    logger.info(f"[ROUTE] GET /api/posts called: limit={limit}")
+
     username = auth.get_current_user_optional(request)
 
-    try:
-        lek = json.loads(last_evaluated_key) if last_evaluated_key else None
-        result = PostService.get_posts_with_like_info(
-            limit=limit, last_evaluated_key=lek, username=username
-        )
-        # last_evaluated_keyを文字列化、フロントでなくサーバー側で処理
-        if result["last_evaluated_key"]:
-            result["last_evaluated_key"] = json.dumps(result["last_evaluated_key"])
-        return result
-    except Exception as e:
-        raise HTTPException(status_code=500, detail="Get posts failed")
+    lek = json.loads(last_evaluated_key) if last_evaluated_key else None
+    result = PostService.get_posts_with_like_info(
+        limit=limit, last_evaluated_key=lek, username=username
+    )
+    # last_evaluated_keyを文字列化、フロントでなくサーバー側で処理
+    if result["last_evaluated_key"]:
+        result["last_evaluated_key"] = json.dumps(result["last_evaluated_key"])
+
+    logger.info(f"[ROUTE] GET /api/posts completed: count={len(result['posts'])}")
+
+    return result
 
 
 # ログインしなくても見れるようにするので、JWT認証は必要なし
@@ -73,34 +79,39 @@ def get_posts_by_category_paginated(
     limit: int = Query(10, ge=1, le=50),
     last_evaluated_key: Optional[str] = None,
 ):
-    username = auth.get_current_user_optional(request)
+    logger.info(
+        f"[ROUTE] Getting posts by category: category={category}, limit={limit}, has_last_key={last_evaluated_key is not None}"
+    )
 
-    try:
-        lek = json.loads(last_evaluated_key) if last_evaluated_key else None
-        result = PostService.get_posts_by_category_with_like_info(
-            category, limit=limit, last_evaluated_key=lek, username=username
-        )
-        # last_evaluated_keyを文字列化、フロントでなくサーバー側で処理
-        if result["last_evaluated_key"]:
-            result["last_evaluated_key"] = json.dumps(result["last_evaluated_key"])
-        return result
-    except Exception as e:
-        raise HTTPException(status_code=500, detail="Get posts by category failed")
+    username = auth.get_current_user_optional(request)
+    logger.debug(f"[ROUTE] User authentication status: username={username}")
+
+    lek = json.loads(last_evaluated_key) if last_evaluated_key else None
+    result = PostService.get_posts_by_category_with_like_info(
+        category, limit=limit, last_evaluated_key=lek, username=username
+    )
+    # last_evaluated_keyを文字列化、フロントでなくサーバー側で処理
+    if result["last_evaluated_key"]:
+        result["last_evaluated_key"] = json.dumps(result["last_evaluated_key"])
+
+    logger.info(
+        f"[ROUTE] Posts by category retrieved successfully: category={category}, count={len(result.get('posts', []))}"
+    )
+    return result
 
 
 # ログインしなくても見れるようにするので、JWT認証は必要なし
 @router.get("/api/posts/{post_id}", response_model=PostResponse)
 def get_single_post(request: Request, post_id: str):
+    logger.info(f"[ROUTE] Getting single post: post_id={post_id}")
+
     # ログイン中ならusernameを取得する
     username = auth.get_current_user_optional(request)
-    try:
-        result = PostService.get_single_post_with_like_info(post_id, username)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail="Get single post failed")
+    logger.debug(f"[ROUTE] User authentication status: username={username}")
 
-    if result:
-        return result
-    raise HTTPException(status_code=404, detail=f"Post of ID:{post_id} doesn't exist")
+    result = PostService.get_single_post_with_like_info(post_id, username)
+    logger.info(f"[ROUTE] Single post retrieved successfully: post_id={post_id}")
+    return result
 
 
 @router.put("/api/posts/{post_id}", response_model=PostResponse)
@@ -111,6 +122,8 @@ def update_post(
     data: PostBody,
     csrf_protect: CsrfProtect = Depends(),
 ):
+    logger.info(f"[ROUTE] Updating post: post_id={post_id}")
+
     # 認証
     new_token, username = auth.verify_csrf_update_jwt(
         request, csrf_protect, request.headers
@@ -118,30 +131,17 @@ def update_post(
 
     # 認可: 投稿の所有者であることの確認
     post = db_get_single_post(post_id)
-    if not post:
-        raise HTTPException(status_code=404, detail="Post not found")
-
-    # 修正
     if post["username"] != username:
-        raise HTTPException(
-            status_code=403, detail="Not authorized to delete this post"
+        logger.warning(
+            f"[ROUTE] Unauthorized post update attempt: post_id={post_id}, username={username}"
         )
+        raise PostOwnershipError(message="この投稿を更新する権限がありません。")
 
-    try:
-        result = PostService.update_post_with_like_info(post_id, data, username)
-        print("like_infoを追加したあとのres")
-        print(result)
-    except ValidationError as e:
-        print(f"❌ バリデーションエラー: {e.errors()}")
-        raise HTTPException(status_code=422, detail=e.errors())
-    except Exception as e:
-        print("500エラー発生")
-        raise HTTPException(status_code=500, detail="Update post failed")
-
+    result = PostService.update_post_with_like_info(post_id, data, username)
     cookie_manager.set_jwt_cookie(response, new_token)
-    if result:
-        return result
-    raise HTTPException(status_code=404, detail="Update post failed")
+
+    logger.info(f"[ROUTE] Post updated successfully: post_id={post_id}")
+    return result
 
 
 # 特定のpost_idのpostを削除し、それについているcommmentもすべて削除する
@@ -153,30 +153,34 @@ def delete_post(
     post_id: str,
     csrf_protect: CsrfProtect = Depends(),
 ):
+    logger.info(f"[ROUTE] Deleting post: post_id={post_id}")
+
     # 認証
     new_token, username = auth.verify_csrf_update_jwt(
         request, csrf_protect, request.headers
     )
+    logger.debug(f"[ROUTE] User authenticated for post deletion: username={username}")
 
     # 認可: 投稿の所有者であることの確認
     post = db_get_single_post(post_id)
-    if not post:
-        raise HTTPException(status_code=404, detail="Post not found")
 
     if post["username"] != username:
-        raise HTTPException(
-            status_code=403, detail="Not authorized to delete this post"
+        logger.warning(
+            f"[ROUTE] Unauthorized post deletion attempt: post_id={post_id}, username={username}, owner={post['username']}"
         )
+        raise PostOwnershipError(message="この投稿を削除する権限がありません。")
 
-    try:
-        result = db_delete_post_and_related_items(post_id)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail="Delete post failed")
+    logger.info(
+        f"[ROUTE] Authorization verified for post deletion: post_id={post_id}, username={username}"
+    )
 
+    result = db_delete_post_and_related_items(post_id)
     cookie_manager.set_jwt_cookie(response, new_token)
-    if result:
-        return {"message": f"Post {post_id} deleted successfully."}
-    raise HTTPException(status_code=404, detail="Delete post failed")
+
+    logger.info(
+        f"[ROUTE] Post deleted successfully: post_id={post_id}, username={username}"
+    )
+    return {"message": f"Post {post_id} deleted successfully."}
 
 
 # ログインが必要=JWT認証が必要
@@ -187,22 +191,37 @@ def get_posts_by_user_paginated(
     limit: int = Query(10, ge=1, le=50),
     last_evaluated_key: Optional[str] = None,
 ):
+    logger.info(
+        f"[ROUTE] Getting posts by user: username={username}, limit={limit}, has_last_key={last_evaluated_key is not None}"
+    )
+
     token_username = auth.verify_jwt(request)
 
     # 権限チェック：現在は自分の投稿のみ表示
     if token_username != username:
-        raise HTTPException(status_code=403, detail="You can only view your own posts")
-    try:
-        lek = json.loads(last_evaluated_key) if last_evaluated_key else None
-        result = PostService.get_posts_by_user_with_like_info(
-            limit=limit, last_evaluated_key=lek, username=username
+        logger.warning(
+            f"[ROUTE] Unauthorized access attempt: token_username={token_username}, requested_username={username}"
         )
-        # last_evaluated_keyを文字列化、フロントでなくサーバー側で処理
-        if result["last_evaluated_key"]:
-            result["last_evaluated_key"] = json.dumps(result["last_evaluated_key"])
-        return result
-    except Exception as e:
-        raise HTTPException(status_code=500, detail="Get user's posts failed")
+        raise UserPermissionError(message="自分の投稿のみ閲覧できます。")
+
+    logger.info(
+        f"[ROUTE] Authorization verified for user posts access: username={username}"
+    )
+
+    lek = json.loads(last_evaluated_key) if last_evaluated_key else None
+
+    result = PostService.get_posts_by_user_with_like_info(
+        limit=limit, last_evaluated_key=lek, username=username
+    )
+
+    # last_evaluated_keyを文字列化、フロントでなくサーバー側で処理
+    if result["last_evaluated_key"]:
+        result["last_evaluated_key"] = json.dumps(result["last_evaluated_key"])
+
+    logger.info(
+        f"[ROUTE] User posts retrieved successfully: username={username}, count={len(result.get('posts', []))}"
+    )
+    return result
 
 
 # 無限スクロール対応版（オプション）
@@ -214,25 +233,32 @@ def get_user_liked_posts_paginated(
     last_evaluated_key: Optional[str] = None,
 ):
     """ユーザーがいいねした投稿一覧を取得（ページネーション対応）"""
+    logger.info(
+        f"[ROUTE] Getting user liked posts: username={username}, limit={limit}, has_last_key={last_evaluated_key is not None}"
+    )
+
     token_username = auth.verify_jwt(request)
 
     if token_username != username:
-        raise HTTPException(
-            status_code=403, detail="You can only view your own liked posts"
+        logger.warning(
+            f"[ROUTE] Unauthorized liked posts access attempt: token_username={token_username}, requested_username={username}"
         )
-    try:
-        # last_evaluated_keyをparseする
-        lek = json.loads(last_evaluated_key) if last_evaluated_key else None
-        result = PostService.get_user_liked_posts_with_like_info(
-            limit=limit, last_evaluated_key=lek, username=username
-        )
-        # last_evaluated_keyを文字列化、フロントでなくサーバー側で処理
-        if result["last_evaluated_key"]:
-            result["last_evaluated_key"] = json.dumps(result["last_evaluated_key"])
-        return result
+        raise UserPermissionError(message="自分のいいね投稿のみ閲覧できます。")
 
-    except HTTPException:
-        raise
-    except Exception as e:
-        print(f"❌ [get_user_liked_posts_paginated] Error: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to get liked posts")
+    logger.debug(f"[ROUTE] User authenticated: token_username={token_username}")
+
+    # last_evaluated_keyをparseする
+    lek = json.loads(last_evaluated_key) if last_evaluated_key else None
+
+    result = PostService.get_user_liked_posts_with_like_info(
+        username=username, limit=limit, last_evaluated_key=lek
+    )
+
+    # last_evaluated_keyを文字列化、フロントでなくサーバー側で処理
+    if result["last_evaluated_key"]:
+        result["last_evaluated_key"] = json.dumps(result["last_evaluated_key"])
+
+    logger.info(
+        f"[ROUTE] User liked posts retrieved successfully: username={username}, count={len(result.get('posts', []))}"
+    )
+    return result
