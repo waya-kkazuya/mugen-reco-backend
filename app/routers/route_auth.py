@@ -8,7 +8,9 @@ from app.auth.auth_utils import AuthJwtCsrf
 from fastapi_csrf_protect import CsrfProtect
 from app.auth.cookie_utils import CookieManager
 from typing import Annotated
+import logging
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 auth = AuthJwtCsrf()
 cookie_manager = CookieManager()
@@ -16,21 +18,26 @@ cookie_manager = CookieManager()
 
 @router.get("/api/csrftoken", response_model=Csrf)
 def get_csrf_token(csrf_protect: CsrfProtect = Depends()):
+    logger.info("[ROUTE] Generating CSRF token")
+
     raw_token, signed_token = csrf_protect.generate_csrf_tokens()
     res = {"csrf_token": signed_token}
+
+    logger.info("[ROUTE] CSRF token generated successfully")
     return res
 
 
 @router.post("/api/register", response_model=UserInfo)
 def signup(request: Request, user: UserBody, csrf_protect: CsrfProtect = Depends()):
+    logger.info(f"[ROUTE] User signup request: username={user.username}")
+
     csrf_token = csrf_protect.get_csrf_from_headers(request.headers)
     csrf_protect.validate_csrf(csrf_token)  # 例外が発生しなければCSRFトークンが有効
+    logger.debug("[ROUTE] CSRF token validated successfully")
 
-    try:
-        new_user = db_signup(user)
-        return new_user
-    except Exception as e:
-        raise HTTPException(status_code=500, detail="Signup failed")
+    new_user = db_signup(user)
+    logger.info(f"[ROUTE] User signup completed successfully: username={user.username}")
+    return new_user
 
 
 @router.post("/api/login", response_model=UserInfo)
@@ -40,29 +47,41 @@ def login(
     user: UserBody,
     csrf_protect: CsrfProtect = Depends(),
 ):
+    logger.info(f"[ROUTE] User login request: username={user.username}")
+
     csrf_token = csrf_protect.get_csrf_from_headers(request.headers)
     csrf_protect.validate_csrf(csrf_token)  # 例外が発生しなければCSRFトークンが有効
+    logger.debug("[ROUTE] CSRF token validated successfully")
 
     token, username = db_login(user)
-    print("username", username)
     cookie_manager.set_jwt_cookie(response, token)
+
+    logger.info(f"[ROUTE] User login completed successfully: username={username}")
     return {"username": username}
 
 
 @router.post("/api/logout", response_model=SuccessMsg)
 def logout(request: Request, response: Response, csrf_protect: CsrfProtect = Depends()):
+    logger.info("[ROUTE] User logout request")
+
     csrf_token = csrf_protect.get_csrf_from_headers(request.headers)
     csrf_protect.validate_csrf(csrf_token)  # 例外が発生しなければCSRFトークンが有効
+    logger.debug("[ROUTE] CSRF token validated successfully")
 
     # JWTのトークンを空に
     cookie_manager.clear_jwt_cookie(response)
+    logger.info("[ROUTE] User logout completed successfully")
     return {"message": "Successfully logged-out"}
 
 
 @router.get("/api/user", response_model=UserInfo)
 def get_user_refresh_jwt(request: Request, response: Response):
+    logger.info("[ROUTE] Get user and JWT refresh request")
+
     new_token, subject = auth.verify_update_jwt(request)
     cookie_manager.set_jwt_cookie(response, new_token)
+
+    logger.info(f"[ROUTE] JWT refresh completed successfully: username={subject}")
     return {"username": subject}
 
 
@@ -81,32 +100,19 @@ async def check_username_availability(
         ),
     ],
 ) -> UsernameCheckResponse:
-    """
-    ユーザー名の利用可能性をチェック
+    """ユーザー名の利用可能性をチェック"""
+    logger.info(f"[ROUTE] Checking username availability: username={username}")
 
-    - **username**: チェックするユーザー名
+    # ユーザー名が既に存在するかチェック
+    user = db_get_user_by_username(username)
 
-    Returns:
-    - **is_available**: ユーザー名が利用可能かどうか
-    - **message**: 結果メッセージ
-    """
+    if not user:
+        is_available = True
+        message = "このユーザー名は利用可能です"
+        logger.info(f"[ROUTE] Username is available: username={username}")
+    else:
+        is_available = False
+        message = "このユーザー名は既に使用されています"
+        logger.info(f"[ROUTE] Username is not available: username={username}")
 
-    try:
-        # ユーザー名が既に存在するかチェック
-        user = db_get_user_by_username(username)
-
-        if not user:
-            is_available = True
-            message = "このユーザー名は利用可能です"
-        else:
-            is_available = False
-            message = "このユーザー名は既に使用されています"
-
-        return UsernameCheckResponse(is_available=is_available, message=message)
-
-    except Exception as e:
-        print(f"Unexpected error checking username {username}: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="ユーザー名の確認中にエラーが発生しました",
-        )
+    return UsernameCheckResponse(is_available=is_available, message=message)
