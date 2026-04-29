@@ -1,4 +1,13 @@
+# 仮想環境
 env_portfolio_api/
+
+# Serverless Framework
+node_modules/
+.serverless/
+
+# Python
 __pycache__/
 *.pyc
+
+# 環境変数
 .env
