@@ -1,0 +1,17 @@
+# 本番用パッケージを全て含むs
+-r requirements.txt
+
+# テストフレームワーク
+pytest==8.4.1
+pytest-cov==6.2.1
+pytest-mock==3.14.1
+
+# pytestの内部依存パッケージ
+coverage==7.10.1
+iniconfig==2.1.0
+pluggy==1.6.0
+tomli==2.2.1
+exceptiongroup==1.3.0
+
+# FastAPIのTestClientが内部で使用
+httpx==0.28.1
