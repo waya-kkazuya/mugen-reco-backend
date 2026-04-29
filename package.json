@@ -11,5 +11,8 @@
   "description": "",
   "devDependencies": {
     "serverless-python-requirements": "^6.1.2"
+  },
+    "overrides": {
+    "minimatch": "3.1.4"
   }
 }
