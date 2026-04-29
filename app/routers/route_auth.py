@@ -95,8 +95,8 @@ async def check_username_availability(
         Path(
             title="ユーザー名",
             description="3-20文字の半角英数字、アンダースコア(_)、ハイフン(-)、ドット(.)が使用可能",
-            regex=r"^[a-zA-Z0-9._-]{3,20}$",
-            example="test.user_name-123",
+            pattern=r"^[a-zA-Z0-9._-]{3,20}$",
+            examples="test.user_name-123",
         ),
     ],
 ) -> UsernameCheckResponse:
